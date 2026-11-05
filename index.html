@@ -408,7 +408,7 @@ function rank(d, escUse){
     const sm = d.secs.filter(s=>a.sec.includes(s));
     const km = d.free.filter(k=>a.kws.has(k) && (!modPick || kmods(a,k).includes(modPick))).sort((x,y)=>idf(y)-idf(x));
     const rare = km.filter(k=>idf(k)>=RARE);
-    const kwS = Math.min(7, km.reduce((t,k)=>t+idf(k),0)*0.9);
+    const kwS = Math.min(9, km.reduce((t,k)=>t+idf(k)*(idf(k)>=RARE?1.8:0.6),0));
     const modOk = d.mod && a.mods.includes(d.mod);
     const modFit = d.mod ? cm.filter(c=>cmods(a,c).includes(d.mod)).length : 0;
     const cmS = cm.filter(c=>!GENERIC.has(c));
@@ -433,34 +433,21 @@ const AFFT = {alta:'Trabaja las variables de tu tema y tiene experiencia asesor�
 function shortName(a){ const g=a.name.slice(0, a.name.lastIndexOf(a.sur)).trim().split(' ')[0] || a.name.split(' ')[0]; return g+' '+a.sur.split(' ')[0]; }
 const B = s => `<b>${esc(s)}</b>`;
 function why(r, d){
-  const who = esc(shortName(r.a));
-  const parts = [];
+  const mm = modPick || null;
+  const LV = c => lev(r.a,c,mm) || lev(r.a,c);
+  const ojo = (d.mod && !modPick && r.cm.length && !r.modFit) ? ` Aún no lo ha visto en ${MPHRASE[d.mod]}.` : '';
   if(r.cm.length){
-    const all = r.cm.length===d.cons.length && r.cm.length>1;
-    const mm = modPick || null;
-    const LV = c => lev(r.a,c,mm) || lev(r.a,c);
-    const groups = [3,2,1].map(L=>r.cm.filter(c=>LV(c)===L)).map((g,i)=>[3-i,g]).filter(([,g])=>g.length);
-    const PH = {3:'es de los docentes con más experiencia en', 2:'tiene experiencia asesorando', 1:'ha asesorado de forma puntual'};
-    const sets = r.cm.map(c=>cmods(r.a,c).join('|')); const same = sets.every(x=>x===sets[0]);
-    const phr = groups.map(([L,g])=>`${PH[L]} ${listJoin(g.map(c=> same ? B(c) : `${B(c)} (en ${mphr(cmods(r.a,c))})`))}`);
-    parts.push(`${who} ${listJoin(phr)}${same ? `, ${r.cm.length>1?'todo ':''}en ${mphr(cmods(r.a,r.cm[0]))}` : ''}.`);
-    if(all) parts.push('Coincide con todas las variables de tu tema.');
-    if(d.mod && !modPick && !r.modFit) parts.push(`Ojo: todavía no ha asesorado estos temas en ${MPHRASE[d.mod]}.`);
-  } else if(r.lm.length){
-    parts.push(`${who} asesora temas de ${listJoin(r.lm.map(l=>B(LN[l])))} en ${mphr(lmods(r.a,r.lm[0]))}, que es la línea donde se ubica tu investigación.`);
-  } else if(r.rare.length){
-    parts.push(`${who} ha asesorado temas que tratan ${listJoin(r.rare.slice(0,3).map(k=>B(d.orig[k]||k)))} en ${mphr(kmods(r.a,r.rare[0]))}, igual que tu propuesta.`);
-  } else {
-    parts.push(`${who} ha acompañado investigaciones con un enfoque parecido al tuyo.`);
+    const top = r.cm.slice().sort((x,y)=>GENERIC.has(x)-GENERIC.has(y) || LV(y)-LV(x)).slice(0,2).sort((x,y)=>LV(y)-LV(x));
+    const PH = {3:'Amplia experiencia en', 2:'Experiencia en', 1:'Experiencia puntual en'};
+    const L1 = LV(top[0]), L2 = top[1] ? LV(top[1]) : L1;
+    const body = (L1===L2 || !top[1]) ? `${PH[L1]} ${listJoin(top.map(B))}` : `${PH[L1]} ${B(top[0])} y ${PH[L2].toLowerCase()} ${B(top[1])}`;
+    const ms = [...new Set(top.flatMap(c=>cmods(r.a,c)))];
+    const extra = r.rare.length ? ` También ha visto temas con ${B(d.orig[r.rare[0]]||r.rare[0])}.` : '';
+    return `${body}, en ${mphr(ML.filter(m=>ms.includes(m)))}.${extra}${ojo}`;
   }
-  if((r.cm.length || r.lm.length) && r.rare.length) parts.push(`Incluso ha asesorado temas que mencionan ${listJoin(r.rare.slice(0,3).map(k=>B(d.orig[k]||k)))}.`);
-  const extra = [];
-  if(r.prim.length && r.cm.length) extra.push(`${listJoin(r.prim.map(l=>B(LN[l])))} ${r.prim.length>1?'están entre sus líneas':'es una de sus líneas'} principales`);
-  if(r.sm.length) extra.push(`conoce el sector ${listJoin(r.sm.map(s=>B(s.startsWith('Sector ')?s.slice(7):s)))}`);
-  if(extra.length) parts.push('Además, ' + listJoin(extra) + '.');
-  const more = r.a.con.filter(c=>!r.cm.includes(c)).slice(0,2);
-  if(more.length) parts.push(`También puedes consultarle sobre ${listJoin(more.map(esc))}.`);
-  return parts.join(' ');
+  if(r.rare.length) return `Ha asesorado temas sobre ${listJoin(r.rare.slice(0,2).map(k=>B(d.orig[k]||k)))}, en ${mphr(kmods(r.a,r.rare[0]))}.`;
+  if(r.lm.length) return `Asesora temas de ${B(LN[r.lm[0]])}, en ${mphr(lmods(r.a,r.lm[0]))}.`;
+  return 'Ha acompañado investigaciones con un enfoque parecido al tuyo.';
 }
 function markTopic(text, spec){
   let nt='', map=[];
