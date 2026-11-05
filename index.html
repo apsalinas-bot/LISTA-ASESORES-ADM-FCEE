@@ -11,7 +11,7 @@
   --on-navy:#ffffff; --on-navy-muted:#c9d0ec; --btn:#e9edf7;
   --hl:#fdf0c8; --hl-fg:#5a4200; --pill:#e3e9f8; --pill-fg:#24357f;
   --ok:#1f7a4d; --ok-soft:#e1f3e8; --mid:#2f62c4; --mid-soft:#e3edfb;
-  --scrim:rgba(14,19,48,.45);
+  --scrim:rgba(14,19,48,.45); --star:#e0a21b;
   --shadow:0 1px 2px rgba(27,36,87,.06),0 4px 14px rgba(27,36,87,.05);
   --font:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;
 }
@@ -22,7 +22,7 @@
     --on-navy:#ffffff; --on-navy-muted:#c4cbe8; --btn:#212a5a;
     --hl:#4a3a10; --hl-fg:#ffe7a6; --pill:#24306a; --pill-fg:#c9d4ff;
     --ok:#6fd09a; --ok-soft:#173828; --mid:#8db3f5; --mid-soft:#1a2c55;
-    --scrim:rgba(0,0,0,.6); --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+    --scrim:rgba(0,0,0,.6); --star:#ecc35a; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
@@ -31,7 +31,7 @@
   --on-navy:#ffffff; --on-navy-muted:#c4cbe8; --btn:#212a5a;
   --hl:#4a3a10; --hl-fg:#ffe7a6; --pill:#24306a; --pill-fg:#c9d4ff;
   --ok:#6fd09a; --ok-soft:#173828; --mid:#8db3f5; --mid-soft:#1a2c55;
-  --scrim:rgba(0,0,0,.6); --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+  --scrim:rgba(0,0,0,.6); --star:#ecc35a; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -143,6 +143,18 @@ mark.s{background:transparent;color:inherit;text-decoration:underline;text-decor
 .wm{display:flex;flex-wrap:wrap;gap:5px}
 .mp{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--btn);color:var(--fg);white-space:nowrap}
 .mp.on{background:var(--navy);color:var(--on-navy);box-shadow:0 0 0 2px var(--gold)}
+.aff2{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;padding:3px 11px 3px 8px;border-radius:999px;font-size:12.5px;font-weight:700;letter-spacing:.01em;cursor:help}
+.aff2 .stars{display:inline-flex;gap:1px}
+.aff2 .stars svg{width:15px;height:15px;display:block}
+.aff2 .stars path{stroke-linejoin:round;stroke-width:1.4}
+.aff2 .stars .on path{fill:var(--star);stroke:var(--star)}
+.aff2 .stars .off path{fill:none;stroke:currentColor;opacity:.35}
+.aff2 .stars .on{animation:starpop .45s cubic-bezier(.3,1.6,.5,1) var(--d,0ms) both}
+.aff2 em{font-style:normal}
+.a-alta{background:var(--ok-soft);color:var(--ok)}
+.a-media{background:var(--mid-soft);color:var(--mid)}
+.a-baja{background:var(--btn);color:var(--muted)}
+@keyframes starpop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
 .whybox{display:flex;flex-direction:column;gap:6px;background:var(--bg);border-radius:12px;padding:12px 14px}
 .whybox p{margin:0;font-size:15.5px;line-height:1.55}
 .thinking{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:22px 24px;display:flex;flex-direction:column;gap:16px}
@@ -216,7 +228,7 @@ footer p{margin:0;max-width:85ch}
   .analyzer textarea{font-size:16px}
   .go{width:100%;justify-content:center}
 }
-@media (prefers-reduced-motion: reduce){.sug,.drawer,.thinking .bar i,.thinking li.on .dot{animation:none}.name{transition:none}.name:hover{transform:none}}
+@media (prefers-reduced-motion: reduce){.aff2 .stars .on{animation:none}.sug,.drawer,.thinking .bar i,.thinking li.on .dot{animation:none}.name{transition:none}.name:hover{transform:none}}
 </style>
 
 <div class="topbar">
@@ -406,6 +418,7 @@ function rank(d, escUse){
 }
 const AFF = {alta:'Afinidad alta', media:'Afinidad media', baja:'Afinidad inicial'};
 const AFFN = {alta:3, media:2, baja:1};
+const AFFT = {alta:'Comparte variables específicas de tu tema', media:'Comparte parte de las variables o la línea de tu tema', baja:'Coincide solo en la línea o el sector'};
 function shortName(a){ const g=a.name.slice(0, a.name.lastIndexOf(a.sur)).trim().split(' ')[0] || a.name.split(' ')[0]; return g+' '+a.sur.split(' ')[0]; }
 const B = s => `<b>${esc(s)}</b>`;
 function why(r, d){
@@ -486,7 +499,7 @@ function renderResult(text, isExample){
     const chips = [...r.cm.map(c=>`<span class="tag var">${esc(c)}</span>`), ...r.rare.slice(0,3).map(k=>`<span class="tag var">${esc(d.orig[k]||k)}</span>`), ...r.lm.map(l=>`<span class="tag">${esc(LN[l])}</span>`), ...r.sm.map(s=>`<span class="tag plain">${esc(s)}</span>`)];
     return `<article class="sug" style="animation-delay:${i*70}ms">
       <div class="sug-top"><span class="rank" aria-hidden="true">${initials(r.a.name)}</span>
-        <div class="who2"><h4>${nameHTML(r.a)}</h4><span class="meter m-${r.aff}" aria-label="${AFF[r.aff]}"><i></i><i></i><i></i><em>${AFF[r.aff]}</em></span></div></div>
+        <div class="who2"><h4>${nameHTML(r.a)}</h4><span class="aff2 a-${r.aff}" title="${AFFT[r.aff]}" aria-label="${AFF[r.aff]}: ${AFFN[r.aff]} de 3 estrellas"><span class="stars" aria-hidden="true">${[0,1,2].map(k=>`<svg viewBox="0 0 20 20" class="${k<AFFN[r.aff]?'on':'off'}" style="--d:${i*90+k*110+200}ms"><path d="M10 1.8l2.47 5.01 5.53.8-4 3.9.94 5.5L10 14.42l-4.94 2.6.94-5.5-4-3.9 5.53-.8z"/></svg>`).join('')}</span><em>${AFF[r.aff]}</em></span></div></div>
       <div class="whybox"><span class="flabel">¿Por qué te lo sugerimos?</span><p>${why(r,d)}</p></div>
       ${(()=>{ const rows=[...r.cm.map(c=>[c,cmods(r.a,c)]), ...r.rare.slice(0,2).map(k=>[d.orig[k]||k,kmods(r.a,k)])]; if(!rows.length && r.lm.length) rows.push(...r.lm.map(l=>[LN[l],lmods(r.a,l)])); if(!rows.length) return ''; return `<div class="det"><span class="flabel">En qué modalidad lo ha asesorado</span><div class="wrows">${rows.map(([c,ms])=>`<div class="wrow"><span class="wc">${esc(c)}</span><span class="wm">${ML.map(m=>ms.includes(m)?`<span class="mp${d.mod===m?' on':''}">${esc(MSHORT[m])}</span>`:'').join('')}</span></div>`).join('')}</div></div>`; })()}
       ${chips.length?`<div class="det"><span class="flabel">Coincide con tu tema en</span><div class="tags">${chips.join('')}</div></div>`:''}
